@@ -6,11 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+        "strings"
 
 	v1beta1 "k8s.io/api/admission/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+var REPLACE_POD_IMAGE string = "aliocp"
 
 // Mutate mutates
 func Mutate(body []byte, verbose bool) ([]byte, error) {
@@ -24,6 +27,7 @@ func Mutate(body []byte, verbose bool) ([]byte, error) {
 		return nil, fmt.Errorf("unmarshaling request failed with %s", err)
 	}
 
+	fmt.Println("liu,admReview is:",admReview)
 	var err error
 	var pod *corev1.Pod
 
@@ -45,17 +49,17 @@ func Mutate(body []byte, verbose bool) ([]byte, error) {
 
 		// add some audit annotations, helpful to know why a object was modified, maybe (?)
 		resp.AuditAnnotations = map[string]string{
-			"mutateme": "yup it did it",
+			"mutatepodimages": "yup it did it",
 		}
 
 		// the actual mutation is done by a string in JSONPatch style, i.e. we don't _actually_ modify the object, but
 		// tell K8S how it should modifiy it
 		p := []map[string]string{}
-		for i := range pod.Spec.Containers {
+		for i,v := range pod.Spec.Containers {
 			patch := map[string]string{
 				"op":    "replace",
 				"path":  fmt.Sprintf("/spec/containers/%d/image", i),
-				"value": "debian",
+				"value": repalcePodImages(v.Image),
 			}
 			p = append(p, patch)
 		}
@@ -81,4 +85,14 @@ func Mutate(body []byte, verbose bool) ([]byte, error) {
 	}
 
 	return responseBody, nil
+}
+
+func repalcePodImages(imagePath string)string{
+	pathInfo := strings.Split(imagePath,"/")
+	imageInfo := strings.Split(pathInfo[0],".")
+	imageInfo[2] = REPLACE_POD_IMAGE
+	newImageInfo := strings.Join(imageInfo,".")
+	pathInfo[0] = newImageInfo
+	newImagePath := strings.Join(pathInfo,"/")
+	return newImagePath
 }

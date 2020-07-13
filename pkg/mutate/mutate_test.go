@@ -136,7 +136,7 @@ func TestMutatesValidRequest(t *testing.T) {
 
 	rr := r.Response
 	assert.Equal(t, `[{"op":"replace","path":"/spec/containers/0/image","value":"debian"}]`, string(rr.Patch))
-	assert.Contains(t, rr.AuditAnnotations, "mutateme")
+	assert.Contains(t, rr.AuditAnnotations, "mutatepodimages")
 
 }
 

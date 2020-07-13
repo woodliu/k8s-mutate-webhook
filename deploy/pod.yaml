@@ -8,7 +8,7 @@ metadata:
 spec:
   containers:
   - name: c7m
-    image: centos:7
+    image: docker-dev-local.art.opsocp.test.com/demo/msc:0.0.1
     command:
       - /bin/bash
     args:
