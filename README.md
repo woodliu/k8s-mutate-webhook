@@ -1,42 +1,44 @@
 # k8s-mutate-webhook
 
-????k8s mutating webhook,????????????????????????????forked?[alex-leonhardt/k8s-mutate-webhook](https://github.com/alex-leonhardt/k8s-mutate-webhook)?
-
 This is a companion to the blog post [Writing a very basic kubernetes mutating admission webhook](https://medium.com/ovni/writing-a-very-basic-kubernetes-mutating-admission-webhook-398dbbcb63ec)  
 
 ## ssl/tls
 
-`ssl/` ?????????????,???k8s csr,???kubectl??approve?csr
+`ssl/` will generate certificates for webhook，use the command below to create certificates and csr. Then use `kubectl get csr` to get the created csr, and use `kubectl approve csr xxx` to approve the csr.
 
-```
+```shell
 cd ssl/ 
 make 
 ```
 
-## ????
+## build
 
-???`ssl`?????`docker`??,????????????:
+Copy the `ssl` foler above and the generated ELF `mutatepodimages` to a folder, then build a docker image:
 
-```
+```shell
 docker build .
 ```
 
-## ??MutatingWebhookConfiguration
+Dockerfile is:
 
-?ssl?????????,??????`MutatingWebhookConfiguration`?`webhooks.clientConfig.caBundle`?
+```shell
+# cat Dockerfile
+FROM alpine
+
+WORKDIR /app
+COPY mutatepodimages .
+COPY ssl ssl
+CMD ["/app/mutatepodimages"]
+```
+
+> You can create a secret to hold the certificates rather than copy it to the image. See [webhook-create-signed-cert.sh](https://github.com/woodliu/admission-webhook-example/blob/master/deployment/webhook-create-signed-cert.sh)
+
+## MutatingWebhookConfiguration
+
+Set the ca generated above to`MutatingWebhookConfiguration.webhooks.clientConfig.caBundle`
 
 ```
 cat mutatepodimages.pem | base64 -w0
-```
-
-> ?:admission webhook????pem???????????????webook?caBundle??,????????ca??????????????[webhook-create-signed-cert.sh](https://github.com/woodliu/admission-webhook-example/blob/master/deployment/webhook-create-signed-cert.sh)
-
-## ??
-
-?`deploy`?????????,???`kubectl describe pod c7m`??pod??????????
-
-```
-kubectl create -f pod.yaml
 ```
 
 
